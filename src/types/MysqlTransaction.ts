@@ -1,38 +1,45 @@
 import {MysqlOperator} from "./MysqlOperator";
-import {PoolConnection} from "mysql2/promise";
+import {Pool} from "mysql2";
 import {Sql} from "./mysql";
+import {Pool as PromisePool, PoolConnection} from "mysql2/promise";
 
 
 export class MysqlTransaction extends MysqlOperator {
 
-    connection: PoolConnection | null;
+    pool: Pool | null;
+    pool2: PromisePool | null;
+    connection?: PoolConnection|null;
 
-    constructor(connection: PoolConnection) {
+    constructor(pool: Pool) {
         super();
-        this.connection = connection;
+        this.pool=pool;
+        this.pool2 = pool.promise();
     }
 
-    checkConnection() {
-        if (!this.connection) {
+    async getConnection():Promise<PoolConnection> {
+        if (!this.pool2) {
             throw new Error('This MysqlTransaction has been released!')
         }
-
+        this.connection=await this.pool2.getConnection();
+        if (!this.connection){
+            throw new Error('This MysqlTransaction has no connection!')
+        }
+        return this.connection;
     }
 
     async release() {
-        await this.connection?.release();
+        await this.pool2?.releaseConnection(this.connection as PoolConnection)
         this.connection = null;
-
     }
 
     async beginTransaction(): Promise<MysqlTransaction> {
-        this.checkConnection();
+        await this.getConnection();
         await this.connection?.beginTransaction();
         return this;
     }
 
-    query(sql: string, params?: any[] | object): Promise<any> {
-        this.checkConnection();
+    async query(sql: string, params?: any[] | object): Promise<any> {
+        await this.getConnection();
         if (!params) {
             params = [];
         }
@@ -41,7 +48,7 @@ export class MysqlTransaction extends MysqlOperator {
                 // @ts-ignore
                 let [rows, fields] =
                     await this.connection?.query(sql, params ? params : []);
-                await this.connection?.release();
+                // await this.connection?.
                 resolve_all(rows);
             } catch (e) {
                 reject_all(e);
@@ -49,8 +56,8 @@ export class MysqlTransaction extends MysqlOperator {
         })
     }
 
-    queries(sqls: Sql[]) {
-        this.checkConnection();
+    async queries(sqls: Sql[]) {
+        await this.getConnection();
         return new Promise(async (resolve_all, reject_all) => {
             try {
                 let results = [];
@@ -62,11 +69,11 @@ export class MysqlTransaction extends MysqlOperator {
                         results.push(rows);
                     }
                     await this.connection?.commit();
-                    await this.connection?.release();
+                    // await this.connection?.release();
                     this.connection = null;
                 } catch (e) {
                     await this.connection?.rollback();
-                    await this.connection?.release();
+                    // await this.connection?.release();
                     this.connection = null;
                     reject_all(e);
                 }

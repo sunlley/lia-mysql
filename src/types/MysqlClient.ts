@@ -12,10 +12,10 @@ export class MysqlClient extends MysqlOperator{
         this.pool = pool;
     }
 
-    // async getTransaction(){
-    //     let connection = await this.pool.getConnection();
-    //     return new MysqlTransaction(connection)
-    // }
+    async getTransaction(){
+        // let connection = await this.pool.getConnection();
+        return new MysqlTransaction(this.pool)
+    }
 
     query(sql: string, params?: any[] | object): Promise<any[] | any>  {
         if (!params) {

@@ -1,6 +1,6 @@
 {
   "name": "lia-mysql",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "JavaScript library of data standards.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
