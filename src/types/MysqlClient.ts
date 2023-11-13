@@ -1,21 +1,21 @@
 import {DeleteResult, InsertOption, InsertResult, SelectOption, UpdateOption, UpdateResult, UpdateRow} from "./mysql";
 import {MysqlOperator} from "./MysqlOperator";
 import {MysqlTransaction} from "./MysqlTransaction";
-import {PoolConnection} from "mysql2/promise";
+import {Pool} from "mysql2";
 
 export class MysqlClient extends MysqlOperator{
 
-    private pool: PoolConnection;
+    private pool: Pool;
 
-    constructor(pool: PoolConnection) {
+    constructor(pool: Pool) {
         super();
         this.pool = pool;
     }
 
-    async getTransaction(){
-        let connection = await this.pool.getConnection();
-        return new MysqlTransaction(connection)
-    }
+    // async getTransaction(){
+    //     let connection = await this.pool.getConnection();
+    //     return new MysqlTransaction(connection)
+    // }
 
     query(sql: string, params?: any[] | object): Promise<any[] | any>  {
         if (!params) {
@@ -23,11 +23,19 @@ export class MysqlClient extends MysqlOperator{
         }
         return new Promise(async (resolve_all, reject_all) => {
             try {
-                let connection = await this.pool.getConnection();
-                let [rows, fields] =
-                    await connection.query(sql, params ? params : []);
-                await connection.release();
-                resolve_all(rows);
+                this.pool.query(sql, params ? params : [],function (err, result, fields) {
+                    if (err){
+                        reject_all(err);
+                    }else {
+                        resolve_all(result);
+                    }
+                });
+                // let connection = await this.pool.getConnection();
+                // let [rows, fields] =
+                //     await connection.query(sql, params ? params : []);
+                // await connection.release();
+                // let [rows, fields] = await this.pool.query(sql, params ? params : []);
+                // resolve_all(rows);
             } catch (e) {
                 reject_all(e);
             }

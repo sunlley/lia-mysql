@@ -93,22 +93,22 @@ export class MysqlInstaller extends BaseInstaller {
         const config = options;
         return new Promise(async (resolve, reject) => {
             // 使用连接池，提升性能
-            let pool1 = createPool(config) as Pool;
-            const pool = pool1.promise();
-            pool.on('acquire', (connection: any) => {
+            let pool1 = createPool(config);
+            // const pool = pool1.promise();
+            pool1.on('acquire', (connection: any) => {
                 _this.logSys(`client[ ${id} ]: acquire`);
             })
-            pool.on('connection', (connection: any) => {
+            pool1.on('connection', (connection: any) => {
                 _this.logSys(`client[ ${id} ]: connection`);
             })
-            pool.on('enqueue', () => {
+            pool1.on('enqueue', () => {
                 _this.logSys(`client[ ${id} ]: enqueue`);
             })
-            pool.on('release', (connection: any) => {
+            pool1.on('release', (connection: any) => {
                 _this.logSys(`client[ ${id} ]: release`);
             })
 
-            let client = new MysqlClient(pool);
+            let client = new MysqlClient(pool1);
 
             if (name) {
                 _this._target.SQL[name] = client;
