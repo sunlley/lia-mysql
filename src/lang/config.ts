@@ -1,7 +1,6 @@
-import * as mysql from "mysql2";
-import {SslOptions} from "mysql2";
+import { AuthPlugin, SslOptions } from 'mysql2';
 
-export class MysqlConfig {
+export class Config {
 
 
     constructor(options:any) {
@@ -69,7 +68,7 @@ export class MysqlConfig {
     uri?: string;
     Promise?: any;
     authPlugins?: {
-        [key: string]: mysql.AuthPlugin;
+        [key: string]: AuthPlugin;
     };
 
     /**

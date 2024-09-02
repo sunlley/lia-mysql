@@ -13,7 +13,7 @@ $ npm install lia-mysql
 ## How to Use MysqlInstaller
 ### 1.1 Mysql Initial (single mode)
 ```typescript
-import {MysqlInstaller,MysqlConfig} from "core-mysql";
+import {MysqlInstaller,Config} from "core-mysql";
 const TARGET = {SQL: {}};
 const config = {
     host: "127.0.0.1",
@@ -22,7 +22,7 @@ const config = {
     password: "root12345",
     database: "test"
 }
-const installer = new MysqlInstaller(config as MysqlConfig,TARGET,'sys|info');
+const installer = new MysqlInstaller(config as Config,TARGET,'sys|info');
 await installer.load();
 ```
 ### 1.2 Mysql Use (single mode)
@@ -32,6 +32,23 @@ const result = await TARGET.SQL.query('select * from users where id=?', [100])
 console.log(result);
 
 ```
+
+#### Select
+```typescript
+const rows = await db.select('table-name', {
+  where: {
+    type: 'javascript'
+  },
+  columns: ['author', 'title'],
+  orders: [['id', 'desc']]
+});
+console.log(rows);
+
+=> SELECT `author`, `title` FROM `table-name`
+WHERE `type` = 'javascript' ORDER BY `id` DESC
+
+```
+
 #### Insert
 ```typescript
 const row = {
@@ -56,7 +73,6 @@ const result = await TARGET.SQL.insert('table-name', rows);
 console.log(result);
 
 ```
-
 
 #### Update
 
@@ -145,7 +161,7 @@ const row = await TARGET.SQL.get('table-name', { name: 'fengmk2' });
 ### 2.1 Mysql Initial (multi mode)
 
 ```typescript
-import {MysqlInstaller,MysqlConfig,MysqlConfigs} from "core-installer";
+import {MysqlInstaller,Config,MysqlConfigs} from "core-installer";
 const TARGET = {SQL: {}};
 const config = {
     APP1:{
@@ -156,7 +172,7 @@ const config = {
         database: "test"
     }
 }
-const installer = new MysqlInstaller(config as MysqlConfigs<MysqlConfig>,TARGET,'sys|info');
+const installer = new MysqlInstaller(config as MysqlConfigs<Config>,TARGET,'sys|info');
 await installer.load();
 ```
 

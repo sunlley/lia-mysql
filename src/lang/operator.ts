@@ -1,6 +1,6 @@
-import * as SqlString from "sqlstring";
+import { escape, escapeId, format } from 'sqlstring';
 
-export abstract class MysqlOperator {
+export abstract class Operator {
 
     constructor() {
     }
@@ -9,15 +9,15 @@ export abstract class MysqlOperator {
         // if values is object, not null, not Array;
         if (!Array.isArray(values) && typeof values === 'object' && values !== null) {
             // object not support replace column like ??;
-            return sql.replace(/\:(\w+)/g, (text, key) => {
-                if (values.hasOwnProperty(key)) {
-                    return SqlString.escape(values[key]);
+            return sql.replace(/:(\w+)/g, (text, key) => {
+                if (Object.prototype.hasOwnProperty.call(values, key)) {
+                    return escape(values[key]);
                 }
                 // if values don't hasOwnProperty, return origin text;
                 return text;
             });
         }
-        return SqlString.format(sql, values, stringifyObjects, timeZone);
+        return format(sql, values, stringifyObjects, timeZone);
     }
 
     protected _where(where?: any) {
@@ -95,7 +95,7 @@ export abstract class MysqlOperator {
     }
 
     escapeId(value: any, forbidQualified?: boolean): string {
-        return SqlString.escapeId(value, forbidQualified);
+        return escapeId(value, forbidQualified);
     }
 
     abstract query(sql: string, params?: any[] | object): Promise<any[] | any>;

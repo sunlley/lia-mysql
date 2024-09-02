@@ -1,9 +1,10 @@
-import {DeleteResult, InsertOption, InsertResult, SelectOption, UpdateOption, UpdateResult, UpdateRow} from "./mysql";
-import {MysqlOperator} from "./MysqlOperator";
-import {MysqlTransaction} from "./MysqlTransaction";
+import {DeleteResult, InsertOption, InsertResult, SelectOption, UpdateOption, UpdateResult, UpdateRow} from "../types";
+import {Operator} from "./operator";
+import {Transaction} from "./transaction";
 import {Pool} from "mysql2";
+import { QueryResult } from 'mysql2/typings/mysql/lib/protocol/packets';
 
-export class MysqlClient extends MysqlOperator{
+export class Client extends Operator{
 
     private pool: Pool;
 
@@ -14,16 +15,16 @@ export class MysqlClient extends MysqlOperator{
 
     async getTransaction(){
         // let connection = await this.pool.getConnection();
-        return new MysqlTransaction(this.pool)
+        return new Transaction(this.pool)
     }
 
-    query(sql: string, params?: any[] | object): Promise<any[] | any>  {
+    query<T extends QueryResult>(sql: string, params?: any[] | object): Promise<T>  {
         if (!params) {
             params = [];
         }
-        return new Promise(async (resolve_all, reject_all) => {
+        return new Promise((resolve_all, reject_all) => {
             try {
-                this.pool.query(sql, params ? params : [],function (err, result, fields) {
+                this.pool.query<T>(sql, params ? params : [],function (err, result, fields) {
                     if (err){
                         reject_all(err);
                     }else {
@@ -42,12 +43,13 @@ export class MysqlClient extends MysqlOperator{
         })
     }
 
-    queryOne(sql: string, params?: any[] | object){
+    queryOne<T extends  QueryResult>(sql: string, params?: any[] | object): Promise<T|undefined>{
+        // eslint-disable-next-line no-async-promise-executor
         return new Promise(async (resolve_all, reject_all) => {
             try {
-                let items = await this.query(sql, params);
-                if (items && items.length > 0) {
-                    resolve_all(items[0]);
+                let items = await this.query<T>(sql, params);
+                if (items && Array.isArray(items) && items.length>0) {
+                    resolve_all((items as any)[0]);
                 }
                 reject_all(new Error('No row found'));
             } catch (e) {
@@ -76,11 +78,11 @@ export class MysqlClient extends MysqlOperator{
     //     })
     // }
 
-    async count(table: string, where?: object) {
+    async count(table: string, where?: object):Promise<number> {
         const sql = this.format('SELECT COUNT(*) as count FROM ??', [ table ]) +
             this._where(where);
         const rows = await this.query(sql);
-        return rows[0].count;
+        return (rows as any)[0].count;
     }
 
     /**
@@ -104,13 +106,13 @@ export class MysqlClient extends MysqlOperator{
         return await this.query(sql);
     }
 
-    async get(table: string, where?: object, option?: SelectOption) {
+    async get<T = any>(table: string, where?: object, option?: SelectOption) :Promise<T>{
         option = option || {};
         option.where = where;
         option.limit = 1;
         option.offset = 0;
         const rows = await this.select(table, option);
-        return rows && rows[0] || null;
+        return rows && rows[0] || undefined;
     }
 
     async insert(table: string, rows: object | object[], option?: InsertOption): Promise<InsertResult> {
@@ -135,7 +137,8 @@ export class MysqlClient extends MysqlOperator{
         for (const row of insertRows) {
             const values: any[] = [];
             for (const column of option.columns) {
-                // @ts-ignore
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-expect-error
                 values.push(row[column]);
             }
             strs.push('(?)');
@@ -165,13 +168,14 @@ export class MysqlClient extends MysqlOperator{
         for (const column of option.columns) {
             sets.push('?? = ?');
             values.push(column);
-            // @ts-ignore
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
             values.push(row[column]);
         }
         const sql = this.format('UPDATE ?? SET ', [ table ]) +
             this.format(sets.join(', '), values) +
             this._where(option.where);
-        return await this.query(sql);
+        return await this.query<UpdateResult>(sql);
     }
 
     /**
@@ -237,7 +241,8 @@ export class MysqlClient extends MysqlOperator{
                     SQL_CASE[key] = { when: [], then: [] };
                 }
                 SQL_CASE[key].when.push(' WHEN ' + whereString + ' THEN ? ');
-                // @ts-ignore
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-expect-error
                 SQL_CASE[key].then.push(row[key]);
             }
 
@@ -245,9 +250,11 @@ export class MysqlClient extends MysqlOperator{
                 if (!WHERE[key]) {
                     WHERE[key] = [];
                 }
-                // @ts-ignore
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-expect-error
                 if (!WHERE[key].includes(where[key])) {
-                    // @ts-ignore
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-expect-error
                     WHERE[key].push(where[key]);
                 }
             }
