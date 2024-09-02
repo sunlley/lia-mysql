@@ -13,7 +13,7 @@
     "sourceMap": true,
     "baseUrl": ".",
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "src",
     "types": [
       "node"
     ],

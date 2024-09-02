@@ -1,8 +1,8 @@
 # Mysql Installer
 Simplify the use of MySQL
 
-![](https://img.shields.io/badge/version-1.0.0-lightgrey)
-![](https://img.shields.io/badge/node-16.%2B-brightgreen)
+![](https://img.shields.io/badge/version-1.0.2-lightgrey)
+![](https://img.shields.io/badge/node-18.%2B-brightgreen)
 
 ## Installer
 Using npm:
