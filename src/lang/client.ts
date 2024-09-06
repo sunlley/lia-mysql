@@ -22,8 +22,7 @@ export class Client extends Operator{
         if (!params) {
             params = [];
         }
-        return new Promise((resolve_all, reject_all) => {
-            try {
+        return new Promise(( resolve_all, reject_all) => { try {
                 this.pool.query<T>(sql, params ? params : [],function (err, result, fields) {
                     if (err){
                         reject_all(err);
