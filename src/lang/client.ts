@@ -96,13 +96,13 @@ export class Client extends Operator{
      *  - {Number} offset         result offset, default is `0`
      * @return {Array} result rows
      */
-    async select(table: string, option?: SelectOption): Promise<any[]> {
+    async select<T = any>(table: string, option?: SelectOption): Promise<T[]> {
         option = option || {};
         const sql = this._selectColumns(table, option.columns) +
             this._where(option.where) +
             this._orders(option.orders) +
             this._limit(option.limit, option.offset);
-        return await this.query(sql);
+        return await this.query<any>(sql);
     }
 
     async get<T = any>(table: string, where?: object, option?: SelectOption) :Promise<T>{

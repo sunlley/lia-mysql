@@ -22,9 +22,6 @@ export class MysqlInstaller extends BaseInstaller {
     if (!target.__SQL_CACHE) {
       target.__SQL_CACHE = {};
     }
-    if (!target.SQL) {
-      target.SQL = {};
-    }
     let mul = !(configs instanceof Config);
     if (mul) {
       if (configs.uri || configs.host) {
@@ -46,7 +43,7 @@ export class MysqlInstaller extends BaseInstaller {
         await this.createClient(this.configs[key], key);
       }
     } else {
-      await this.createClient(this.configs);
+      await this.createClient(this.configs,'defult');
     }
   }
 
@@ -56,17 +53,6 @@ export class MysqlInstaller extends BaseInstaller {
         if (error) {
           reject(error);
         } else {
-          /*
-            {
-              fieldCount: 0,
-              affectedRows: 1,
-              insertId: 0,
-              info: 'Rows matched: 1  Changed: 1  Warnings: 0',
-              serverStatus: 35,
-              warningStatus: 0,
-              changedRows: 1
-          }
-           */
           resolve(result);
         }
       });
@@ -77,45 +63,36 @@ export class MysqlInstaller extends BaseInstaller {
    * @private
    * @param name
    */
-  _matchName(name?: string | null) {
-    if (!name) {
-      // this.logInfo(`createClient[ default ]: option`, config);
-      return null;
-    } else {
-      return name.toUpperCase();
-      // this.logInfo(`createClient[ ${name} ]: option`, config);
-    }
+  _matchName(name: string) {
+    return name.toUpperCase();
   }
 
-  createClient(options: Config, name?: string | null): Promise<Client> {
-    const _this = this;
+  createClient(options: Config, name: string): Promise<Client> {
     name = this._matchName(name);
-    const id = _this.randomStr();
+    const id = this.randomStr();
     const config = options;
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       // 使用连接池，提升性能
       let pool1 = createPool(config);
       // const pool = pool1.promise();
       pool1.on('acquire', (connection: any) => {
-        _this.logSys(`client[ ${id} ]: acquire`);
+        this.logSys(`client[ ${id} ]: acquire`);
       });
       pool1.on('connection', (connection: any) => {
-        _this.logSys(`client[ ${id} ]: connection`);
+        this.logSys(`client[ ${id} ]: connection`);
       });
       pool1.on('enqueue', () => {
-        _this.logSys(`client[ ${id} ]: enqueue`);
+        this.logSys(`client[ ${id} ]: enqueue`);
       });
       pool1.on('release', (connection: any) => {
-        _this.logSys(`client[ ${id} ]: release`);
+        this.logSys(`client[ ${id} ]: release`);
       });
 
       let client = new Client(pool1);
-
-      if (name) {
-        _this._target.SQL[name] = client;
-      } else {
-        _this._target.SQL = client;
+      if (name==='DEFAULT'){
+        this._target.SQL = client;
       }
+      this._target.SQLS[name] = client;
       resolve(client);
     });
   }

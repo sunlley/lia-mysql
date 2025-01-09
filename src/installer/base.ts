@@ -65,7 +65,6 @@ export class BaseInstaller extends EventEmitter {
 
   protected log(...data: any) {
     if (this.debug) {
-      // @ts-ignore
       console.log(`🐰😁[${this.name}]`, `${this.dateTime()}`, ...data);
     }
   }
@@ -83,8 +82,9 @@ export class BaseInstaller extends EventEmitter {
     const minNum = 0;
     try {
       return parseInt(`${Math.random() * (maxNum - minNum + 1) + minNum}`, 10);
-    } catch (e) {}
-    return 0;
+    } catch (e) {
+      return 0;
+    }
   }
 
   protected randomStr(length = 10) {

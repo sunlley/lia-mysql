@@ -180,7 +180,7 @@ await installer.load();
 The multi-instance mode is basically the same as the single-instance mode, except that the database instance needs to be specified on the SQL instance, for example:
 #### query
 ```typescript
-const result = await TARGET.SQL.APP1.query('select * from users where id=?', [100])
+const result = await TARGET.SQLS.APP1.query('select * from users where id=?', [100])
 console.log(result);
 
 ```

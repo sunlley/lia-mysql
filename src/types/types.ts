@@ -17,7 +17,8 @@ export type MysqlConfigs<T extends Config>={
 };
 
 export type MysqlTarget = {
-  SQL:Record<any, Client>,
+  SQL:Client,
+  SQLS:Record<any, Client>,
   __SQL_CACHE?:any
 }
 
