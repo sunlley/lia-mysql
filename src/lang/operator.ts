@@ -29,22 +29,54 @@ export abstract class Operator {
         const values: any[] = [];
         for (const key in where) {
             let value = where[key];
-            if (Array.isArray(value)) {
-                wheres.push('?? IN (?)');
-            } else {
-                if (value === null || value === undefined) {
-                    wheres.push('?? IS ?');
-                } else {
-                    if (Object.hasOwn(value, 'operate')){
-                        wheres.push(`?? ${value['operate']} ?`);
-                        value = value['value'];
-                    }else {
-                        wheres.push('?? = ?');
+            if (key=='$or'){
+                let orObj = value;
+                let orSql:string[]=[];
+                let orValues:any[] = [];
+                for (const orKey in orObj) {
+                    let orValue = orObj[orKey];
+                    if (Array.isArray(orValue)) {
+                        orSql.push('?? IN (?)');
+                        orValues.push(orKey);
+                        orValues.push(orValue);
+                    } else {
+                        if (orValue === null || orValue === undefined) {
+                            orSql.push('?? IS ?');
+                            orValues.push(orKey);
+                            orValues.push(orValue);
+                        } else {
+                            if (Object.hasOwn(orValue, 'operate')){
+                                orSql.push(`?? ${orValue['operate']} ?`);
+                                orValues.push(orKey);
+                                orValues.push(orValue['value']);
+                            }else {
+                                orSql.push('?? = ?');
+                                orValues.push(orKey);
+                                orValues.push(orValue);
+                            }
+                        }
                     }
                 }
+                wheres.push(` (${orSql.join('or')}) `);
+                values.push(...orValues);
+            }else {
+                if (Array.isArray(value)) {
+                    wheres.push('?? IN (?)');
+                } else {
+                    if (value === null || value === undefined) {
+                        wheres.push('?? IS ?');
+                    } else {
+                        if (Object.hasOwn(value, 'operate')){
+                            wheres.push(`?? ${value['operate']} ?`);
+                            value = value['value'];
+                        }else {
+                            wheres.push('?? = ?');
+                        }
+                    }
+                }
+                values.push(key);
+                values.push(value);
             }
-            values.push(key);
-            values.push(value);
         }
         if (wheres.length > 0) {
             return this.format(' WHERE ' + wheres.join(' AND '), values);
