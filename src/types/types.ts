@@ -74,3 +74,26 @@ export type LockTableOption = {
 
 export type BeforeQueryHandler = (sql: string) => string | undefined | void;
 export type AfterQueryHandler = (sql: string, result: any, execDuration: number, err?: Error) => void;
+export type WhereOperate={
+  key:string,
+  operate?:string,
+  value?:any
+  // $eq:string,
+  // $ne:string,
+  // $gt:string,
+  // $gte:string,
+  // $lt:string,
+  // $lte:string,
+  // $in:string,
+  // $nin:string,
+  // $like:string,
+  // $nlike:string,
+  // $between:string,
+  // $nbetween:string,
+  // $is:string,
+  // $nis:string,
+  // $or:string,
+  // $and:string,
+  // $not:string,
+  // $nor:string,
+}

@@ -22,6 +22,9 @@ export class MysqlInstaller extends BaseInstaller {
     if (!target.__SQL_CACHE) {
       target.__SQL_CACHE = {};
     }
+    if (!target.SQLS) {
+      target.SQLS = {};
+    }
     let mul = !(configs instanceof Config);
     if (mul) {
       if (configs.uri || configs.host) {
@@ -43,7 +46,7 @@ export class MysqlInstaller extends BaseInstaller {
         await this.createClient(this.configs[key], key);
       }
     } else {
-      await this.createClient(this.configs,'defult');
+      await this.createClient(this.configs,'default');
     }
   }
 
@@ -71,28 +74,30 @@ export class MysqlInstaller extends BaseInstaller {
     name = this._matchName(name);
     const id = this.randomStr();
     const config = options;
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const _this = this;
     return new Promise((resolve, reject) => {
       // 使用连接池，提升性能
       let pool1 = createPool(config);
       // const pool = pool1.promise();
       pool1.on('acquire', (connection: any) => {
-        this.logSys(`client[ ${id} ]: acquire`);
+        _this.logSys(`client[ ${id} ]: acquire`);
       });
       pool1.on('connection', (connection: any) => {
-        this.logSys(`client[ ${id} ]: connection`);
+        _this.logSys(`client[ ${id} ]: connection`);
       });
       pool1.on('enqueue', () => {
-        this.logSys(`client[ ${id} ]: enqueue`);
+        _this.logSys(`client[ ${id} ]: enqueue`);
       });
       pool1.on('release', (connection: any) => {
-        this.logSys(`client[ ${id} ]: release`);
+        _this.logSys(`client[ ${id} ]: release`);
       });
 
       let client = new Client(pool1);
       if (name==='DEFAULT'){
-        this._target.SQL = client;
+        _this._target.SQL = client;
       }
-      this._target.SQLS[name] = client;
+      _this._target.SQLS[name] = client;
       resolve(client);
     });
   }

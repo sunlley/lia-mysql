@@ -1,4 +1,5 @@
 import { escape, escapeId, format } from 'sqlstring';
+import { WhereOperate } from '../types';
 
 export abstract class Operator {
 
@@ -20,63 +21,71 @@ export abstract class Operator {
         return format(sql, values, stringifyObjects, timeZone);
     }
 
+    /**
+     *
+     * @param key
+     * @param value
+     */
+    _matchWhereItem(key:string,value:WhereOperate|string|number|boolean|Array<any>){
+        let sqls=[];
+        let values=[];
+        //normal
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'){
+            sqls.push('?? = ?');
+            values.push(key);
+            values.push(value);
+        }
+        //operate
+        else if (Object.hasOwn(value, 'key') || Object.hasOwn(value, 'value')|| Object.hasOwn(value, 'operate')){
+            let _value = value as WhereOperate;
+            let _key = key=='$or'?_value.key:key;
+            let operate = _value.operate??'=';
+            if (operate.toUpperCase() =='IN'){
+                sqls.push(`?? IN (?)`);
+            }else {
+                sqls.push(`?? ${operate} ?`);
+            }
+            values.push(_key);
+            values.push(_value.value);
+        }
+        // array
+        else if (Array.isArray(value)){
+            let items = value;
+            if (key =='$or'){
+                let orSqls:string[]=[];
+                let orValues:any[] = [];
+                let _items = items as WhereOperate[];
+                for (const item of _items) {
+                    let _key = item.key;
+                    let _value = item.value;
+                    let result = this._matchWhereItem(_key,_value);
+                    orSqls.push(...result.sqls);
+                    orValues.push(...result.values);
+                }
+
+                sqls.push(` (${orSqls.join(' or ')}) `);
+                values.push(...orValues);
+            }else {
+                sqls.push('?? IN (?)');
+                values.push(items);
+            }
+        }
+        return{
+            sqls,values
+        }
+
+    }
+
     protected _where(where?: any) {
         if (!where) {
             return '';
         }
-
         const wheres: string[] = [];
         const values: any[] = [];
         for (const key in where) {
-            let value = where[key];
-            if (key=='$or'){
-                let orObj = value;
-                let orSql:string[]=[];
-                let orValues:any[] = [];
-                for (const orKey in orObj) {
-                    let orValue = orObj[orKey];
-                    if (Array.isArray(orValue)) {
-                        orSql.push('?? IN (?)');
-                        orValues.push(orKey);
-                        orValues.push(orValue);
-                    } else {
-                        if (orValue === null || orValue === undefined) {
-                            orSql.push('?? IS ?');
-                            orValues.push(orKey);
-                            orValues.push(orValue);
-                        } else {
-                            if (Object.hasOwn(orValue, 'operate')){
-                                orSql.push(`?? ${orValue['operate']} ?`);
-                                orValues.push(orKey);
-                                orValues.push(orValue['value']);
-                            }else {
-                                orSql.push('?? = ?');
-                                orValues.push(orKey);
-                                orValues.push(orValue);
-                            }
-                        }
-                    }
-                }
-                wheres.push(` (${orSql.join('or')}) `);
-                values.push(...orValues);
-            }else {
-                if (Array.isArray(value)) {
-                    wheres.push('?? IN (?)');
-                } else {
-                    if (value === null || value === undefined) {
-                        wheres.push('?? IS ?');
-                    } else {
-                        if (Object.hasOwn(value, 'operate')){
-                            wheres.push(`?? ${value['operate']} ?`);
-                            value = value['value'];
-                        }else {
-                            wheres.push('?? = ?');
-                        }
-                    }
-                }
-                values.push(key);
-                values.push(value);
-            }
+            let result = this._matchWhereItem(key,where[key]);
+            wheres.push(...result.sqls)
+            values.push(...result.values)
         }
         if (wheres.length > 0) {
             return this.format(' WHERE ' + wheres.join(' AND '), values);
