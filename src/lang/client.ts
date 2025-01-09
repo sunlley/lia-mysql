@@ -78,8 +78,7 @@ export class Client extends Operator{
     // }
 
     async count(table: string, where?: object):Promise<number> {
-        const sql = this.format('SELECT COUNT(*) as count FROM ??', [ table ]) +
-            this._where(where);
+        const sql = this.format('SELECT COUNT(*) as count FROM ??', [ table ]) + this._where(where);
         const rows = await this.query(sql);
         return (rows as any)[0].count;
     }

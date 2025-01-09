@@ -28,14 +28,19 @@ export abstract class Operator {
         const wheres: string[] = [];
         const values: any[] = [];
         for (const key in where) {
-            const value = where[key];
+            let value = where[key];
             if (Array.isArray(value)) {
                 wheres.push('?? IN (?)');
             } else {
                 if (value === null || value === undefined) {
                     wheres.push('?? IS ?');
                 } else {
-                    wheres.push('?? = ?');
+                    if (Object.hasOwn(value, 'operate')){
+                        wheres.push(`?? ${value['operate']} ?`);
+                        value = value['value'];
+                    }else {
+                        wheres.push('?? = ?');
+                    }
                 }
             }
             values.push(key);
